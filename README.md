@@ -111,9 +111,12 @@ LIMIT 10;
 Si deseas contribuir, haz un **fork** del proyecto, crea una rama, realiza tus cambios y envía un **pull request**.
 
 ## 📜 Licencia
-Este proyecto está bajo la **Licencia MIT**.
+## Licencia  
+Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](MIT_LICENSE) para más detalles.
+
 
 ---
 📌 *Desarrollado por Didier José Torres Parodis*
+
 
 
