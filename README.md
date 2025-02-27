@@ -1,103 +1,119 @@
----  
+# 🌎 ETL de Datos Climáticos con BigQuery
 
-```md
-# 🌍 ETL de Datos Climáticos con Python y BigQuery  
+## 📌 Descripción
+Este proyecto implementa un pipeline **ETL (Extracción, Transformación y Carga)** que recopila datos climáticos de varias ciudades, los procesa y los almacena en **Google BigQuery** para su posterior análisis.
 
-Este proyecto implementa un **flujo ETL (Extracción, Transformación y Carga)** para recopilar, limpiar y almacenar datos climáticos en Google BigQuery. Se obtienen datos de temperatura, humedad y velocidad del viento desde la API de Open-Meteo, se procesan con Pandas y se almacenan en una base de datos en la nube.  
+El flujo de trabajo sigue tres fases principales:
+1. **Extracción**: Obtiene datos climáticos desde la API de Open-Meteo.
+2. **Transformación**: Convierte y estructura los datos en un formato tabular.
+3. **Carga**: Sube la información procesada a una tabla en **BigQuery**.
 
-## 🚀 Tecnologías utilizadas  
+## 🛠️ Tecnologías utilizadas
+- **Python 3.12**
+- **httpx** (para solicitudes HTTP asíncronas)
+- **pandas** (para manipulación de datos)
+- **Google BigQuery** (para almacenamiento y análisis de datos)
+- **dotenv** (para gestión de variables de entorno)
 
-- **Python**: Lenguaje de programación principal  
-- **httpx**: Para hacer solicitudes HTTP de manera asíncrona  
-- **pandas**: Para manipulación y transformación de datos  
-- **google-cloud-bigquery**: Para interactuar con BigQuery  
-- **dotenv**: Para la gestión de variables de entorno  
-
-## 📁 Estructura del Proyecto  
-
+## 📂 Estructura del proyecto
 ```
-ETL/
-│── extraction.py      # Obtiene datos climáticos de Open-Meteo
-│── transformation.py  # Convierte y limpia los datos en CSV
-│── load.py            # Sube los datos transformados a BigQuery
-│── main.py            # Ejecuta todo el flujo ETL
+ETL_Project/
+│── extraction.py      # Extrae datos de Open-Meteo API
+│── transformation.py  # Procesa y estructura los datos
+│── load.py            # Sube los datos a BigQuery
+│── main.py            # Orquesta todo el flujo ETL
 │── .env               # Variables de entorno (no subir a GitHub)
 │── requirements.txt   # Dependencias del proyecto
 │── README.md          # Documentación
 ```
 
-## 🛠️ Configuración  
+## 🚀 Instalación y Configuración
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/tu_usuario/ETL_Project.git
+   cd ETL_Project
+   ```
 
-### 1️⃣ Clonar el repositorio  
-```bash
-git clone https://github.com/tuusuario/etl-climatico.git
-cd etl-climatico
+2. **Crear un entorno virtual:**
+   ```bash
+   python3 -m venv etlenv
+   source etlenv/bin/activate  # En Windows: etlenv\Scripts\activate
+   ```
+
+3. **Instalar dependencias:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configurar las variables de entorno:**
+   Crea un archivo `.env` en la raíz del proyecto y agrega:
+   ```ini
+   CREDENTIALS_PATH=/ruta/a/tu/credencial.json
+   TABLE_ID=etl_proyecto.tu_tabla
+   ```
+
+## 🏗️ Funcionamiento del ETL
+### 1️⃣ Extracción de Datos (`extraction.py`)
+Este script obtiene datos climáticos de **Bogotá, Medellín, Barranquilla, Santa Marta y Bucaramanga** desde la API de Open-Meteo.
+
+📌 *Ejemplo de datos extraídos:*
+```json
+{
+  "bogota": {
+    "hourly": {
+      "temperature_2m": [15, 14, 13, 12],
+      "relative_humidity_2m": [80, 82, 85, 90],
+      "wind_speed_10m": [5, 6, 7, 8]
+    }
+  }
+}
 ```
 
-### 2️⃣ Crear un entorno virtual e instalar dependencias  
-```bash
-python3 -m venv etlenv
-source etlenv/bin/activate  # En Windows: etlenv\Scripts\activate
-pip install -r requirements.txt
+### 2️⃣ Transformación de Datos (`transformation.py`)
+Se convierte el JSON en un CSV estructurado y se normalizan los datos.
+
+📌 *Ejemplo de datos transformados:*
+```
+ciudad, tiempo, temperatura_2m, humedad_relativa_2m, velocidad_viento_10m, categoria
+Bogotá, 2024-09-01T12:00, 15, 80, 5, temperature_2m
+Bogotá, 2024-09-01T13:00, 14, 82, 6, temperature_2m
 ```
 
-### 3️⃣ Configurar variables de entorno  
-Crea un archivo **.env** y define las siguientes variables:  
+### 3️⃣ Carga de Datos a BigQuery (`load.py`)
+Se envía el CSV final a **BigQuery**, detectando automáticamente los tipos de datos.
 
+📌 *Código relevante:*
+```python
+job_config = bigquery.LoadJobConfig(
+    source_format=bigquery.SourceFormat.CSV,
+    autodetect=True,
+    skip_leading_rows=1
+)
+job = client.load_table_from_dataframe(df, tabla_destino, job_config=job_config)
+job.result()
 ```
-CREDENTIALS_PATH=/ruta/a/credenciales.json
-TABLE_ID=etl-452119.dataset.tabla
-```
 
-## 📌 Flujo de Datos  
-
-1️⃣ **Extracción (`extraction.py`)**  
-   - Obtiene datos meteorológicos de ciudades como Bogotá, Medellín, etc.  
-   - Usa `httpx` para hacer solicitudes asíncronas.  
-   - Guarda los datos en formato JSON.  
-
-2️⃣ **Transformación (`transformation.py`)**  
-   - Convierte el JSON a CSV usando `pandas`.  
-   - Expande los datos en múltiples filas para facilitar su análisis.  
-
-3️⃣ **Carga (`load.py`)**  
-   - Sube el CSV final a Google BigQuery.  
-   - Utiliza `google-cloud-bigquery` para la conexión.  
-
-## ▶️ Ejecución  
-
-Para ejecutar todo el proceso ETL, usa el siguiente comando:  
+## ▶️ Ejecución del Pipeline
+Para correr todo el flujo ETL, ejecuta:
 ```bash
 python3 main.py
 ```
+Esto ejecutará `extraction.py`, `transformation.py` y `load.py` en orden.
 
-## 📊 Visualización de los datos en BigQuery  
-
-1. Ve a [Google BigQuery Console](https://console.cloud.google.com/bigquery)  
-2. Selecciona tu dataset y tabla  
-3. Usa una consulta SQL como:  
-   ```sql
-   SELECT * FROM `etl-452119.dataset.tabla` LIMIT 10;
-   ```
-
-## ✨ Mejoras Futuras  
-
-- Agregar almacenamiento en una base de datos local como PostgreSQL.  
-- Crear un dashboard en **Google Looker Studio** para visualizar los datos.  
-- Optimizar la transformación con Apache Spark para datasets grandes.  
-
----
-
-📌 **Autor**: Didier José Torres Parodis  
-📆 **Última actualización**: Febrero 2025  
-📂 **Licencia**: MIT  
+## 📊 Consulta de Datos en BigQuery
+Para verificar que los datos llegaron correctamente a BigQuery, puedes ejecutar la siguiente consulta SQL:
+```sql
+SELECT * FROM `etl_proyecto.tu_tabla`
+LIMIT 10;
 ```
 
+## ✨ Contribuciones
+Si deseas contribuir, haz un **fork** del proyecto, crea una rama, realiza tus cambios y envía un **pull request**.
+
+## 📜 Licencia
+Este proyecto está bajo la **Licencia MIT**.
+
 ---
+📌 *Desarrollado por Didier José Torres Parodis*
 
-### 🔹 ¿Qué hace esta documentación bien?  
 
-✅ **Explicación gradual**: Comienza sencilla y se vuelve técnica.  
-✅ **Estructura clara**: Introducción, tecnologías, configuración, flujo, ejecución.  
-✅ **Ejemplos y comandos**: Para que cualquier usuario pueda ejecutarlo fácilmente.  
-✅ **Mejoras futuras**: Para mostrar posibles optimizaciones.  
